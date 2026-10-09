@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 16px;
+      font-family: Inter, -apple-system, "Segoe UI", sans-serif;
+      font-size: 12px; color: #111827; background: #fff;
+    }
+    h1 { font-size: 14px; margin: 0 0 4px; }
+    p.hint { margin: 0 0 12px; color: #6b7280; line-height: 1.6; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    button {
+      font: inherit; padding: 7px 12px; border-radius: 8px;
+      border: 1px solid #d1d5db; background: #fff; cursor: pointer;
+    }
+    button:hover { background: #f3f4f6; }
+    button.primary { background: #111827; color: #fff; border-color: #111827; }
+    button.primary:hover { background: #374151; }
+    select { font: inherit; padding: 6px 8px; border-radius: 8px; border: 1px solid #d1d5db; }
+    textarea {
+      width: 100%; height: 300px; resize: vertical;
+      font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 11px;
+      line-height: 1.5; direction: ltr; text-align: left;
+      padding: 10px; border-radius: 8px; border: 1px solid #d1d5db;
+    }
+    label { display: inline-flex; align-items: center; gap: 6px; color: #374151; }
+    #status { margin-top: 10px; min-height: 18px; color: #6b7280; line-height: 1.5; }
+    #status.error { color: #b91c1c; }
+    #status.done { color: #047857; }
+  </style>
+</head>
+<body>
+  <h1>Spec Designer</h1>
+  <p class="hint">
+    یک spec ساده‌ی JSON بنویسید (یا یکی از نمونه‌ها را انتخاب کنید) و «بساز» را بزنید.
+    لایه‌ها با Auto Layout واقعی در صفحه‌ی فعلی ساخته می‌شوند.
+  </p>
+
+  <div class="row">
+    <select id="preset">
+      <option value="login">نمونه: صفحه لاگین موبایل</option>
+      <option value="pricing">نمونه: کارت قیمت‌گذاری</option>
+      <option value="stats">نمونه: ردیف آمار داشبورد</option>
+      <option value="blank">spec خالی</option>
+    </select>
+    <button id="load">بارگذاری نمونه</button>
+  </div>
+
+  <textarea id="spec" spellcheck="false"></textarea>
+
+  <div class="row" style="margin-top:10px">
+    <button id="generate" class="primary">بساز</button>
+    <button id="close">بستن</button>
+    <label><input type="checkbox" id="clearPage" /> پاک کردن صفحه قبل از ساخت</label>
+  </div>
+
+  <div id="status"></div>
+
+  <script>
+    const PRESETS = {
+      login: {
+        type: "frame",
+        name: "Login / Mobile",
+        width: 390,
+        height: 844,
+        fills: "#FFFFFF",
+        layoutMode: "VERTICAL",
+        padding: 32,
+        itemSpacing: 24,
+        primaryAxisAlignItems: "CENTER",
+        counterAxisAlignItems: "MIN",
+        children: [
+          {
+            type: "text", name: "Title", characters: "خوش آمدید",
+            fontName: { family: "Inter", style: "Bold" }, fontSize: 28,
+            lineHeight: 34, textAlignHorizontal: "LEFT", layoutAlign: "STRETCH"
+          },
+          {
+            type: "text", name: "Subtitle", characters: "برای ادامه وارد حساب خود شوید.",
+            fontSize: 14, lineHeight: 20, fills: "#6B7280", layoutAlign: "STRETCH"
+          },
+          {
+            type: "frame", name: "Form", layoutMode: "VERTICAL", itemSpacing: 12,
+            counterAxisSizingMode: "AUTO", primaryAxisSizingMode: "AUTO",
+            counterAxisAlignItems: "MIN", layoutAlign: "STRETCH",
+            children: [
+              {
+                type: "frame", name: "Email Field", layoutMode: "VERTICAL", padding: 12,
+                cornerRadius: 10, strokes: "#D1D5DB", strokeWeight: 1,
+                fills: "#F9FAFB", layoutAlign: "STRETCH",
+                counterAxisSizingMode: "FIXED", primaryAxisSizingMode: "AUTO",
+                children: [
+                  { type: "text", name: "Label", characters: "ایمیل", fontSize: 11, fills: "#9CA3AF" },
+                  { type: "text", name: "Value", characters: "you@example.com", fontSize: 14 }
+                ]
+              },
+              {
+                type: "frame", name: "Password Field", layoutMode: "VERTICAL", padding: 12,
+                cornerRadius: 10, strokes: "#D1D5DB", strokeWeight: 1,
+                fills: "#F9FAFB", layoutAlign: "STRETCH",
+                counterAxisSizingMode: "FIXED", primaryAxisSizingMode: "AUTO",
+                children: [
+                  { type: "text", name: "Label", characters: "رمز عبور", fontSize: 11, fills: "#9CA3AF" },
+                  { type: "text", name: "Value", characters: "••••••••", fontSize: 14 }
+                ]
+              }
+            ]
+          },
+          {
+            type: "frame", name: "Primary Button", layoutMode: "HORIZONTAL",
+            padding: 14, cornerRadius: 12, fills: "#111827",
+            primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER",
+            primaryAxisSizingMode: "FIXED", counterAxisSizingMode: "AUTO",
+            layoutAlign: "STRETCH",
+            children: [
+              {
+                type: "text", name: "Label", characters: "ورود",
+                fontName: { family: "Inter", style: "Bold" }, fontSize: 15, fills: "#FFFFFF"
+              }
+            ]
+          },
+          {
+            type: "text", name: "Footer", characters: "حساب ندارید؟ ثبت‌نام کنید",
+            fontSize: 13, fills: "#6B7280", textAlignHorizontal: "CENTER", layoutAlign: "STRETCH"
+          }
+        ]
+      },
+
+      pricing: {
+        type: "component",
+        name: "Pricing Card / Pro",
+        width: 320,
+        layoutMode: "VERTICAL",
+        padding: 24,
+        itemSpacing: 16,
+        fills: "#FFFFFF",
+        cornerRadius: 20,
+        strokes: "#E5E7EB",
+        strokeWeight: 1,
+        effects: [{ type: "DROP_SHADOW", color: "#0000001A", offset: { x: 0, y: 12 }, radius: 32 }],
+        primaryAxisSizingMode: "AUTO",
+        counterAxisSizingMode: "FIXED",
+        counterAxisAlignItems: "MIN",
+        children: [
+          {
+            type: "frame", name: "Badge", layoutMode: "HORIZONTAL", padding: [4, 10],
+            cornerRadius: 999, fills: "#EEF2FF", primaryAxisSizingMode: "AUTO",
+            counterAxisSizingMode: "AUTO",
+            children: [
+              { type: "text", characters: "محبوب‌ترین", fontSize: 11, fills: "#4F46E5",
+                fontName: { family: "Inter", style: "Bold" } }
+            ]
+          },
+          { type: "text", name: "Plan", characters: "حرفه‌ای", fontSize: 22,
+            fontName: { family: "Inter", style: "Bold" } },
+          {
+            type: "frame", name: "Price Row", layoutMode: "HORIZONTAL", itemSpacing: 6,
+            counterAxisAlignItems: "MAX", primaryAxisSizingMode: "AUTO", counterAxisSizingMode: "AUTO",
+            children: [
+              { type: "text", characters: "۲۹$", fontSize: 32,
+                fontName: { family: "Inter", style: "Bold" } },
+              { type: "text", characters: "/ ماهانه", fontSize: 13, fills: "#6B7280" }
+            ]
+          },
+          {
+            type: "frame", name: "Features", layoutMode: "VERTICAL", itemSpacing: 10,
+            primaryAxisSizingMode: "AUTO", counterAxisSizingMode: "FIXED", layoutAlign: "STRETCH",
+            children: [
+              "پروژه‌های نامحدود",
+              "دسترسی تیمی تا ۱۰ نفر",
+              "پشتیبانی اولویت‌دار"
+            ].map((t) => ({
+              type: "text", characters: "•  " + t, fontSize: 13, fills: "#374151", layoutAlign: "STRETCH"
+            }))
+          },
+          {
+            type: "frame", name: "CTA", layoutMode: "HORIZONTAL", padding: 12, cornerRadius: 12,
+            fills: "#4F46E5", primaryAxisAlignItems: "CENTER", counterAxisAlignItems: "CENTER",
+            counterAxisSizingMode: "AUTO", layoutAlign: "STRETCH",
+            children: [
+              { type: "text", characters: "شروع کنید", fontSize: 14, fills: "#FFFFFF",
+                fontName: { family: "Inter", style: "Bold" } }
+            ]
+          }
+        ]
+      },
+
+      stats: {
+        type: "frame",
+        name: "Stats Row",
+        layoutMode: "HORIZONTAL",
+        itemSpacing: 16,
+        primaryAxisSizingMode: "AUTO",
+        counterAxisSizingMode: "AUTO",
+        children: [
+          { value: "۱۲,۴۸۰", label: "کاربر فعال", delta: "+۱۲٪" },
+          { value: "۳.۲٪", label: "نرخ تبدیل", delta: "+۰.۴٪" },
+          { value: "۸۹هزار", label: "درآمد ماهانه", delta: "−۲٪" }
+        ].map(function (s) {
+          return {
+            type: "frame", name: "Stat / " + s.label, width: 200,
+            layoutMode: "VERTICAL", padding: 20, itemSpacing: 8,
+            fills: "#FFFFFF", cornerRadius: 16, strokes: "#E5E7EB", strokeWeight: 1,
+            counterAxisSizingMode: "FIXED", primaryAxisSizingMode: "AUTO",
+            children: [
+              { type: "text", characters: s.label, fontSize: 12, fills: "#6B7280" },
+              {
+                type: "frame", name: "Value Row", layoutMode: "HORIZONTAL", itemSpacing: 8,
+                counterAxisAlignItems: "MAX", primaryAxisSizingMode: "AUTO", counterAxisSizingMode: "AUTO",
+                children: [
+                  { type: "text", characters: s.value, fontSize: 26,
+                    fontName: { family: "Inter", style: "Bold" } },
+                  { type: "text", characters: s.delta, fontSize: 12,
+                    fills: s.delta.indexOf("−") === 0 ? "#B91C1C" : "#047857" }
+                ]
+              }
+            ]
+          };
+        })
+      },
+
+      blank: {
+        type: "frame",
+        name: "My Screen",
+        width: 375,
+        height: 812,
+        fills: "#FFFFFF",
+        layoutMode: "VERTICAL",
+        padding: 24,
+        itemSpacing: 16,
+        children: [
+          { type: "text", name: "Title", characters: "عنوان شما", fontSize: 24,
+            fontName: { family: "Inter", style: "Bold" } }
+        ]
+      }
+    };
+
+    const specEl = document.getElementById('spec');
+    const statusEl = document.getElementById('status');
+    const presetEl = document.getElementById('preset');
+
+    function setSpec(obj) {
+      specEl.value = JSON.stringify(obj, null, 2);
+    }
+    function setStatus(msg, kind) {
+      statusEl.textContent = msg || '';
+      statusEl.className = kind || '';
+    }
+
+    setSpec(PRESETS.login);
+
+    document.getElementById('load').onclick = function () {
+      setSpec(PRESETS[presetEl.value] || PRESETS.blank);
+      setStatus('نمونه بارگذاری شد.');
+    };
+
+    document.getElementById('generate').onclick = function () {
+      setStatus('در حال ساخت لایه‌ها…');
+      parent.postMessage({
+        pluginMessage: {
+          type: 'generate',
+          spec: specEl.value,
+          clearPage: document.getElementById('clearPage').checked
+        }
+      }, '*');
+    };
+
+    document.getElementById('close').onclick = function () {
+      parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*');
+    };
+
+    window.onmessage = function (event) {
+      const msg = event.data.pluginMessage;
+      if (!msg) return;
+      if (msg.type === 'done') setStatus('✓ ' + msg.message, 'done');
+      if (msg.type === 'error') setStatus('✕ ' + msg.message, 'error');
+    };
+  </script>
+</body>
+</html>
